@@ -1,6 +1,6 @@
 ## Option 2: Academy of Py
 
-![Education](academy_of_py_analysis/images/education.jpg)
+![Education](images/education.jpg)
 
 Well done! Having spent years analyzing financial records for big banks, you've finally scratched your idealistic itch and joined the education sector. In your latest role, you've become the Chief Data Scientist for your city's school district. In this capacity, you'll be helping the  school board and mayor make strategic decisions regarding future school budgets and priorities.
 
@@ -84,7 +84,7 @@ As final considerations:
 * You must submit a link to your Jupyter Notebook with the viewable Data Frames.
 * You must include an exported markdown version of your Notebook called  `README.md` in your GitHub repository.
 * You must include a written description of three observable trends based on the data.
-* See [Example Solution](academy_of_py_analysis/PyCitySchools/PyCitySchools_Example.pdf) for a reference on the expected format.
+* See [Example Solution](PyCitySchools/PyCitySchools_Example.pdf) for a reference on the expected format.
 
 ## Hints and Considerations
 
