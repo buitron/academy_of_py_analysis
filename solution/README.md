@@ -1229,3 +1229,6 @@ school_type_df
 </div>
 
 
+
+## Merry Christmas!!
+<img src="../images/harry_potter_mean_girls_christmas.gif"/>
