@@ -1,8 +1,8 @@
 
 # PyCity Schools Analysis
-* First observed trend
-* Second observed trend
-* Third observed trend
+* The top three schools in the district ranked by '% Overall Passing' are schools that are grouped into the small school size category. Cabrera High School is ranked \#1 with only 1858 students
+* 8 of the top 10 % Overall Passing schools are Charter schools. Of those top 10 the bottom 2 are District schools.
+* Schools that spend less than \$616 per student, which is less than half of the average spending rate per child, are able to acheive an average passing rate of over %99.
 
 
 ```python
@@ -45,6 +45,20 @@ schools_df = schools_df.rename(columns={'name':'school'})
 
 ```
 
+### Formatting Functions
+
+
+```python
+def series_format(adjustment, mult_by, *series):
+    ser_formatted = [(series[i] * mult_by).apply(lambda x: adjustment.format(x))
+                 for i in range(len(series))]
+    return ser_formatted
+
+def value_format(adjustment, mult_by, *value):
+    val_formatted = [adjustment.format((value[i] * mult_by)) for i in range(len(value))]
+    return val_formatted
+```
+
 ## District Summary
 
 
@@ -62,20 +76,19 @@ perc_pass_overall = students_df['overall_pass'].sum() / total_students
 # format values
 total_students_frmt = "{:,}".format(total_students)
 total_budget_frmt = "${:,}".format(total_budget)
-avg_math_score_frmt = "{:.4f}".format(avg_math_score)
-avg_read_score_frmt = "{:.4f}".format(avg_read_score)
-perc_list = [perc_pass_math, perc_pass_read, perc_pass_overall]
-perc_formatted = ["{:.2f}%".format(perc*100) for perc in perc_list]
+ds_period_formatted = value_format("{:.4f}", 1, avg_math_score, avg_read_score)
+ds_percent_formatted = value_format("{:.2f}%", 100, perc_pass_math, perc_pass_read, perc_pass_overall)
+
 
 district_summary_df = pd.DataFrame({
     'Total Schools': total_schools,
     'Total Students': total_students_frmt,
     'Total Budget': total_budget_frmt,
-    'Average Math Score': avg_math_score_frmt,
-    'Average Reading Score': avg_read_score_frmt,
-    '% Passing Math': perc_formatted[0],
-    '% Passing Reading': perc_formatted[1],
-    '% Overall Passing Rate': perc_formatted[2]
+    'Average Math Score': ds_period_formatted[0],
+    'Average Reading Score': ds_period_formatted[1],
+    '% Passing Math': ds_percent_formatted[0],
+    '% Passing Reading': ds_percent_formatted[1],
+    '% Overall Passing Rate': ds_percent_formatted[2]
 }, index=['summary values'], columns=[
     'Total Schools',
     'Total Students',
@@ -139,8 +152,6 @@ district_summary_df
 
 
 
-## School Summary
-
 
 ```python
 students_gb_sm_df = students_df.groupby(by='school').sum().reset_index()
@@ -164,30 +175,39 @@ school_summary_df['Average Reading Score'] = school_summary_df['Average Reading 
 school_summary_df['% Passing Reading'] = school_summary_df['% Passing Reading'] / school_summary_df['Total Students']
 school_summary_df['% Passing Math'] = school_summary_df['% Passing Math'] / school_summary_df['Total Students']
 school_summary_df['% Overall Passing Rate'] = school_summary_df['% Overall Passing Rate'] / school_summary_df['Total Students']
+```
 
-# transfer of ownership
+## School Summary
+
+
+```python
+# transfer of ownership in order to clean school_summary_df
 clean_ss_df = school_summary_df.copy()
 
 # format columns
-clean_ss_df['Total Students'] = clean_ss_df['Total Students'].map("{:,}".format)
-clean_ss_df['Total School Budget'] = clean_ss_df['Total School Budget'].map("${:,}".format)
-clean_ss_df['Per Student Budget'] = clean_ss_df['Per Student Budget'].map("${:,.2f}".format)
-clean_ss_df['Average Math Score'] = clean_ss_df['Average Math Score'].map("{:.4f}".format)
-clean_ss_df['Average Reading Score'] = clean_ss_df['Average Reading Score'].map("{:.4f}".format)
-clean_ss_df['% Passing Math'] = (clean_ss_df['% Passing Math']*100).map("{:.2f}%".format)
-clean_ss_df['% Passing Reading'] = (clean_ss_df['% Passing Reading']*100).map("{:.2f}%".format)
-clean_ss_df['% Overall Passing Rate'] = (clean_ss_df['% Overall Passing Rate']*100).map("{:.2f}%".format)
+ss_money_period_formatted = series_format("${:,.2f}", 1, clean_ss_df['Total School Budget'], clean_ss_df['Per Student Budget'])
+ss_period_formatted = series_format("{:.4f}", 1, clean_ss_df['Average Math Score'], clean_ss_df['Average Reading Score'])
+ss_percent_formatted = series_format("{:.2f}%", 100, clean_ss_df['% Passing Math'], clean_ss_df['% Passing Reading'], clean_ss_df['% Overall Passing Rate'])
 
-
-# filter and order columns
-clean_ss_df = clean_ss_df[[
+ss_df = pd.DataFrame({
+    'School': clean_ss_df['School'],
+    'School Type': clean_ss_df['School Type'],
+    'Total Students': clean_ss_df['Total Students'].map("{:,}".format,),
+    'Total School Budget': ss_money_period_formatted[0],
+    'Per Student Budget': ss_money_period_formatted[1],
+    'Average Math Score': ss_period_formatted[0],
+    'Average Reading Score': ss_period_formatted[1],
+    '% Passing Math': ss_percent_formatted[0],
+    '% Passing Reading': ss_percent_formatted[1],
+    '% Overall Passing Rate': ss_percent_formatted[2]
+}, columns=[
     'School','School Type','Total Students','Total School Budget',
     'Per Student Budget','Average Math Score','Average Reading Score',
     '% Passing Math','% Passing Reading','% Overall Passing Rate'
-]].set_index('School')
-del clean_ss_df.index.name
-clean_ss_df
+]).set_index('School')
+del ss_df.index.name
 
+ss_df
 ```
 
 
@@ -227,7 +247,7 @@ clean_ss_df
       <th>Huang High School</th>
       <td>District</td>
       <td>2,917</td>
-      <td>$1,910,635</td>
+      <td>$1,910,635.00</td>
       <td>$655.00</td>
       <td>76.6294</td>
       <td>81.1827</td>
@@ -239,7 +259,7 @@ clean_ss_df
       <th>Figueroa High School</th>
       <td>District</td>
       <td>2,949</td>
-      <td>$1,884,411</td>
+      <td>$1,884,411.00</td>
       <td>$639.00</td>
       <td>76.7118</td>
       <td>81.1580</td>
@@ -251,7 +271,7 @@ clean_ss_df
       <th>Shelton High School</th>
       <td>Charter</td>
       <td>1,761</td>
-      <td>$1,056,600</td>
+      <td>$1,056,600.00</td>
       <td>$600.00</td>
       <td>83.3595</td>
       <td>83.7257</td>
@@ -263,7 +283,7 @@ clean_ss_df
       <th>Hernandez High School</th>
       <td>District</td>
       <td>4,635</td>
-      <td>$3,022,020</td>
+      <td>$3,022,020.00</td>
       <td>$652.00</td>
       <td>77.2898</td>
       <td>80.9344</td>
@@ -275,7 +295,7 @@ clean_ss_df
       <th>Griffin High School</th>
       <td>Charter</td>
       <td>1,468</td>
-      <td>$917,500</td>
+      <td>$917,500.00</td>
       <td>$625.00</td>
       <td>83.3515</td>
       <td>83.8168</td>
@@ -287,7 +307,7 @@ clean_ss_df
       <th>Wilson High School</th>
       <td>Charter</td>
       <td>2,283</td>
-      <td>$1,319,574</td>
+      <td>$1,319,574.00</td>
       <td>$578.00</td>
       <td>83.2742</td>
       <td>83.9895</td>
@@ -299,7 +319,7 @@ clean_ss_df
       <th>Cabrera High School</th>
       <td>Charter</td>
       <td>1,858</td>
-      <td>$1,081,356</td>
+      <td>$1,081,356.00</td>
       <td>$582.00</td>
       <td>83.0619</td>
       <td>83.9758</td>
@@ -311,7 +331,7 @@ clean_ss_df
       <th>Bailey High School</th>
       <td>District</td>
       <td>4,976</td>
-      <td>$3,124,928</td>
+      <td>$3,124,928.00</td>
       <td>$628.00</td>
       <td>77.0484</td>
       <td>81.0340</td>
@@ -323,7 +343,7 @@ clean_ss_df
       <th>Holden High School</th>
       <td>Charter</td>
       <td>427</td>
-      <td>$248,087</td>
+      <td>$248,087.00</td>
       <td>$581.00</td>
       <td>83.8033</td>
       <td>83.8150</td>
@@ -335,7 +355,7 @@ clean_ss_df
       <th>Pena High School</th>
       <td>Charter</td>
       <td>962</td>
-      <td>$585,858</td>
+      <td>$585,858.00</td>
       <td>$609.00</td>
       <td>83.8399</td>
       <td>84.0447</td>
@@ -347,7 +367,7 @@ clean_ss_df
       <th>Wright High School</th>
       <td>Charter</td>
       <td>1,800</td>
-      <td>$1,049,400</td>
+      <td>$1,049,400.00</td>
       <td>$583.00</td>
       <td>83.6822</td>
       <td>83.9550</td>
@@ -359,7 +379,7 @@ clean_ss_df
       <th>Rodriguez High School</th>
       <td>District</td>
       <td>3,999</td>
-      <td>$2,547,363</td>
+      <td>$2,547,363.00</td>
       <td>$637.00</td>
       <td>76.8427</td>
       <td>80.7447</td>
@@ -371,7 +391,7 @@ clean_ss_df
       <th>Johnson High School</th>
       <td>District</td>
       <td>4,761</td>
-      <td>$3,094,650</td>
+      <td>$3,094,650.00</td>
       <td>$650.00</td>
       <td>77.0725</td>
       <td>80.9664</td>
@@ -383,7 +403,7 @@ clean_ss_df
       <th>Ford High School</th>
       <td>District</td>
       <td>2,739</td>
-      <td>$1,763,916</td>
+      <td>$1,763,916.00</td>
       <td>$644.00</td>
       <td>77.1026</td>
       <td>80.7463</td>
@@ -395,7 +415,7 @@ clean_ss_df
       <th>Thomas High School</th>
       <td>Charter</td>
       <td>1,635</td>
-      <td>$1,043,130</td>
+      <td>$1,043,130.00</td>
       <td>$638.00</td>
       <td>83.4183</td>
       <td>83.8489</td>
@@ -413,7 +433,7 @@ clean_ss_df
 
 
 ```python
-clean_ss_df.sort_values(by='% Overall Passing Rate', ascending=False).head()
+ss_df.sort_values(by='% Overall Passing Rate', ascending=False).head()
 ```
 
 
@@ -453,7 +473,7 @@ clean_ss_df.sort_values(by='% Overall Passing Rate', ascending=False).head()
       <th>Cabrera High School</th>
       <td>Charter</td>
       <td>1,858</td>
-      <td>$1,081,356</td>
+      <td>$1,081,356.00</td>
       <td>$582.00</td>
       <td>83.0619</td>
       <td>83.9758</td>
@@ -465,7 +485,7 @@ clean_ss_df.sort_values(by='% Overall Passing Rate', ascending=False).head()
       <th>Griffin High School</th>
       <td>Charter</td>
       <td>1,468</td>
-      <td>$917,500</td>
+      <td>$917,500.00</td>
       <td>$625.00</td>
       <td>83.3515</td>
       <td>83.8168</td>
@@ -477,7 +497,7 @@ clean_ss_df.sort_values(by='% Overall Passing Rate', ascending=False).head()
       <th>Shelton High School</th>
       <td>Charter</td>
       <td>1,761</td>
-      <td>$1,056,600</td>
+      <td>$1,056,600.00</td>
       <td>$600.00</td>
       <td>83.3595</td>
       <td>83.7257</td>
@@ -489,7 +509,7 @@ clean_ss_df.sort_values(by='% Overall Passing Rate', ascending=False).head()
       <th>Wilson High School</th>
       <td>Charter</td>
       <td>2,283</td>
-      <td>$1,319,574</td>
+      <td>$1,319,574.00</td>
       <td>$578.00</td>
       <td>83.2742</td>
       <td>83.9895</td>
@@ -501,7 +521,7 @@ clean_ss_df.sort_values(by='% Overall Passing Rate', ascending=False).head()
       <th>Wright High School</th>
       <td>Charter</td>
       <td>1,800</td>
-      <td>$1,049,400</td>
+      <td>$1,049,400.00</td>
       <td>$583.00</td>
       <td>83.6822</td>
       <td>83.9550</td>
@@ -519,7 +539,7 @@ clean_ss_df.sort_values(by='% Overall Passing Rate', ascending=False).head()
 
 
 ```python
-clean_ss_df.sort_values(by='% Overall Passing Rate', ascending=True).head()
+ss_df.sort_values(by='% Overall Passing Rate', ascending=True).head()
 ```
 
 
@@ -559,7 +579,7 @@ clean_ss_df.sort_values(by='% Overall Passing Rate', ascending=True).head()
       <th>Figueroa High School</th>
       <td>District</td>
       <td>2,949</td>
-      <td>$1,884,411</td>
+      <td>$1,884,411.00</td>
       <td>$639.00</td>
       <td>76.7118</td>
       <td>81.1580</td>
@@ -571,7 +591,7 @@ clean_ss_df.sort_values(by='% Overall Passing Rate', ascending=True).head()
       <th>Rodriguez High School</th>
       <td>District</td>
       <td>3,999</td>
-      <td>$2,547,363</td>
+      <td>$2,547,363.00</td>
       <td>$637.00</td>
       <td>76.8427</td>
       <td>80.7447</td>
@@ -583,7 +603,7 @@ clean_ss_df.sort_values(by='% Overall Passing Rate', ascending=True).head()
       <th>Ford High School</th>
       <td>District</td>
       <td>2,739</td>
-      <td>$1,763,916</td>
+      <td>$1,763,916.00</td>
       <td>$644.00</td>
       <td>77.1026</td>
       <td>80.7463</td>
@@ -595,7 +615,7 @@ clean_ss_df.sort_values(by='% Overall Passing Rate', ascending=True).head()
       <th>Hernandez High School</th>
       <td>District</td>
       <td>4,635</td>
-      <td>$3,022,020</td>
+      <td>$3,022,020.00</td>
       <td>$652.00</td>
       <td>77.2898</td>
       <td>80.9344</td>
@@ -607,7 +627,7 @@ clean_ss_df.sort_values(by='% Overall Passing Rate', ascending=True).head()
       <th>Huang High School</th>
       <td>District</td>
       <td>2,917</td>
-      <td>$1,910,635</td>
+      <td>$1,910,635.00</td>
       <td>$655.00</td>
       <td>76.6294</td>
       <td>81.1827</td>
@@ -962,9 +982,10 @@ school_spending_ranges_df = school_summary_df[[
 school_spend_gp_mn_df = school_spending_ranges_df.groupby(by='Spending Ranges (Per Student)').mean()
 
 # format columns
-school_spend_gp_mn_df['% Passing Math'] = (school_spend_gp_mn_df['% Passing Math']*100).map("{:.2f}%".format)
-school_spend_gp_mn_df['% Passing Reading'] = (school_spend_gp_mn_df['% Passing Reading']*100).map("{:.2f}%".format)
-school_spend_gp_mn_df['% Overall Passing Rate'] = (school_spend_gp_mn_df['% Overall Passing Rate']*100).map("{:.2f}%".format)
+
+school_spend_gp_mn_df['% Passing Math'] = series_format("{:.2f}%", 100, school_spend_gp_mn_df['% Passing Math'])[0]
+school_spend_gp_mn_df['% Passing Reading'] = series_format("{:.2f}%", 100, school_spend_gp_mn_df['% Passing Reading'])[0]
+school_spend_gp_mn_df['% Overall Passing Rate'] = series_format("{:.2f}%", 100, school_spend_gp_mn_df['% Overall Passing Rate'])[0]
 
 school_spend_gp_mn_df
 ```
@@ -1079,9 +1100,9 @@ school_size_ranges_df = school_summary_df[[
 school_size_gp_mn_df = school_size_ranges_df.groupby('School Size').mean()
 
 # format columns
-school_size_gp_mn_df['% Passing Math'] = (school_size_gp_mn_df['% Passing Math']*100).map("{:.2f}%".format)
-school_size_gp_mn_df['% Passing Reading'] = (school_size_gp_mn_df['% Passing Reading']*100).map("{:.2f}%".format)
-school_size_gp_mn_df['% Overall Passing Rate'] = (school_size_gp_mn_df['% Overall Passing Rate']*100).map("{:.2f}%".format)
+school_size_gp_mn_df['% Passing Math'] = series_format("{:.2f}%", 100, school_size_gp_mn_df['% Passing Math'])[0]
+school_size_gp_mn_df['% Passing Reading'] = series_format("{:.2f}%", 100, school_size_gp_mn_df['% Passing Reading'])[0]
+school_size_gp_mn_df['% Overall Passing Rate'] = series_format("{:.2f}%", 100, school_size_gp_mn_df['% Overall Passing Rate'])[0]
 
 school_size_gp_mn_df
 ```
@@ -1164,9 +1185,9 @@ school_type_df = school_type_gp_mn_df[[
     '% Passing Reading','% Overall Passing Rate']].copy()
 
 # format columns
-school_type_df['% Passing Math'] = (school_type_df['% Passing Math']*100).map("{:.2f}%".format)
-school_type_df['% Passing Reading'] = (school_type_df['% Passing Reading']*100).map("{:.2f}%".format)
-school_type_df['% Overall Passing Rate'] = (school_type_df['% Overall Passing Rate']*100).map("{:.2f}%".format)
+school_type_df['% Passing Math'] = series_format("{:.2f}%", 100, school_type_df['% Passing Math'])[0]
+school_type_df['% Passing Reading'] = series_format("{:.2f}%", 100, school_type_df['% Passing Reading'])[0]
+school_type_df['% Overall Passing Rate'] = series_format("{:.2f}%", 100, school_type_df['% Overall Passing Rate'])[0]
 
 school_type_df
 ```
@@ -1227,7 +1248,6 @@ school_type_df
   </tbody>
 </table>
 </div>
-
 
 
 ## Merry Christmas!!
